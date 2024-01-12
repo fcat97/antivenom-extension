@@ -44,36 +44,73 @@ function retrieveData(keysToRetrieve) {
     });
 };
 
+let watcherID = null;
+async function runWatcher() {
+    const domain = tabInfo[activeTabID] ??= ""
 
-chrome.tabs.onActivated.addListener((activeInfo) => {
-    activeTabID = activeInfo.tabId;
-    console.log(`onActivated: Tab ${activeTabID} activated`);
-});
+    if (domain != "") {
+        // key for today data
+        const today = new Date().toLocaleDateString();
+
+        // get data of the domain
+        let history = await retrieveData([domain]);
+        history = history[domain];
+
+        // crete new object if no previous data exists
+        if (history === undefined) {
+            history = {};
+        }
+
+        // get data for today
+        let todayHistory = history[today];
+        if (todayHistory === undefined) {
+            todayHistory = { time: 0 };
+        }
+
+        // update time
+        todayHistory.time = todayHistory.time + 1;
+
+        // update today history
+        history[today] = todayHistory;
+
+        // put the history back
+        const toPut = { [domain]: history };
+        await storeData(toPut);
+
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (tab !== undefined) {
+            const response = await chrome.tabs.sendMessage(tab.id, { greeting: "hello" });
+            console.log(response);
+        }
+    }
+}
 
 
 chrome.runtime.onInstalled.addListener(() => {
     console.log("onInstalled: service stated");
 
-    const watcher = async () => {
-        const domain = tabInfo[activeTabID] ??= ""
+    try {
+        clearTimeout(timerID);
+    } catch (error) {
 
-        if (domain != "") {
-            const keysToRetrieve = [domain]
- 
-            const history = await retrieveData(keysToRetrieve);
-            let time = history[domain] ??= 0;
- 
-            const toPut = { [domain]: time + 1 };
-            await storeData(toPut);
+    }
+    const timerID = setInterval(() => runWatcher(), 1000);
+});
 
-            console.log(`history: url:${domain} t:${time}s time:${new Date().getTime().toLocaleString()}`);
-        }
+chrome.runtime.onStartup.addListener(() => {
+    console.log("onStartup: service stated");
 
-        const d = new Date();
-        // console.log(`${d.getTime().toLocaleString()}`);
-    };
+    try {
+        clearTimeout(timerID);
+    } catch (error) {
 
-    const timerID = setInterval(() => watcher(), 1000);
+    }
+    const timerID = setInterval(() => runWatcher(), 1000);
+});
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+    activeTabID = activeInfo.tabId;
+    console.log(`onActivated: Tab ${activeTabID} activated`);
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {

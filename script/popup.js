@@ -14,19 +14,36 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Function to dynamically create list items
-  function createListItems(data) {
+  // Function to dynamically create sorted list items
+  function createSortedListItems(data) {
     const listContainer = document.querySelector('.list-group');
+    listContainer.innerHTML = '';
 
-    for (const key in data) {
+    // Sort keys in descending order based on their values
+    const today = new Date().toLocaleDateString();
+    const todayDate = document.querySelector('.date-today');
+    todayDate.innerHTML = '';
+    const textSpan = document.createElement('p');
+    const dateFormat = {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    };
+    textSpan.innerHTML = `${new Date().toLocaleDateString('en-gb', dateFormat)}`;
+    todayDate.appendChild(textSpan);
+
+    const filtered = Object.keys(data).filter(e => data[e].hasOwnProperty([today]));
+    const sortedKeys = filtered.sort((a, b) => data[b][today].time - data[a][today].time);
+
+    for (const key of sortedKeys) {
       const listItem = document.createElement('li');
-      listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+      listItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center', 'text-truncate');
 
       const keySpan = document.createElement('span');
       keySpan.textContent = key;
 
       const valueSpan = document.createElement('span');
-      valueSpan.textContent = formatTime(data[key]);
+      valueSpan.textContent = formatTime(data[key][today]['time']);
 
       listItem.appendChild(keySpan);
       listItem.appendChild(valueSpan);
@@ -52,16 +69,16 @@ document.addEventListener('DOMContentLoaded', function () {
     return formattedTime.trim();
   }
 
-  // Main logic to retrieve and display local storage items
+  // Main logic to retrieve and display sorted local storage items
   async function main() {
     try {
       const localStorageData = await retrieveLocalStorageItems();
-      createListItems(localStorageData);
+      createSortedListItems(localStorageData);
     } catch (error) {
       console.error('Error:', error);
     }
   }
 
   // Call the main function when the DOM is loaded
-  main();
+  setInterval(() => main(), 1000);
 });
