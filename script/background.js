@@ -1,7 +1,7 @@
 let activeTabID = "";
 let tabInfo = {};
 
-const timeLimit = 30 * 60 * 1000; // 30 minutes in milliseconds
+const defaultTimeLimit = 30 * 60; // 30 minutes in seconds
 
 function getDomain(url) {
     try {
@@ -53,15 +53,21 @@ async function runWatcher() {
         const today = new Date().toLocaleDateString();
 
         // get data of the domain
-        let history = await retrieveData([domain]);
-        history = history[domain];
+        let info = await retrieveData([domain]);
+        info = info[domain];
 
         // crete new object if no previous data exists
-        if (history === undefined) {
-            history = {};
+        if (info === undefined) {
+            info = {};
+            info['config'] = {
+                timeLimit: defaultTimeLimit
+            }
+            info['history'] = {};
         }
 
         // get data for today
+        let history = info['history'];
+        console.log(JSON.stringify(info));
         let todayHistory = history[today];
         if (todayHistory === undefined) {
             todayHistory = { time: 0 };
@@ -72,41 +78,43 @@ async function runWatcher() {
 
         // update today history
         history[today] = todayHistory;
+        info['history'] = history;
 
         // put the history back
-        const toPut = { [domain]: history };
+        const toPut = { [domain]: info };
         await storeData(toPut);
 
-        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-        if (tab !== undefined) {
-            const response = await chrome.tabs.sendMessage(tab.id, { greeting: "hello" });
-            console.log(response);
+        if (todayHistory.time > info['config'].timeLimit) {
+            const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+            if (tab !== undefined) {
+                chrome.tabs.sendMessage(tab.id, { cmd: "timeup" });
+            }
         }
     }
 }
 
+setInterval(() => runWatcher(), 1000);
 
 chrome.runtime.onInstalled.addListener(() => {
     console.log("onInstalled: service stated");
-
-    try {
-        clearTimeout(timerID);
-    } catch (error) {
-
-    }
-    const timerID = setInterval(() => runWatcher(), 1000);
+    chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
+        if(tabs[0].url || tabs[0].url !== undefined) {
+            activeTabID = tabs[0].id;
+            tabInfo[activeTabID] = getDomain(tabs[0].url);
+        }
+    });
 });
 
-chrome.runtime.onStartup.addListener(() => {
-    console.log("onStartup: service stated");
+// chrome.runtime.onStartup.addListener(() => {
+//     console.log("onStartup: service stated");
 
-    try {
-        clearTimeout(timerID);
-    } catch (error) {
+//     try {
+//         clearTimeout(timerID);
+//     } catch (error) {
 
-    }
-    const timerID = setInterval(() => runWatcher(), 1000);
-});
+//     }
+//     const timerID = setInterval(() => runWatcher(), 1000);
+// });
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
     activeTabID = activeInfo.tabId;

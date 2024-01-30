@@ -17,11 +17,18 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "*://*/*"
       ],
+      "exclude_matches": ["*://*.chrome/*", "*://*.edge/*"],
       "js": [
         "content.js"
       ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [ "timeout.html", "timeout2.html" ],
+      "matches": [ "<all_urls>" ]
     }
   ]
 }

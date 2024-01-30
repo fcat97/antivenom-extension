@@ -21,19 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Sort keys in descending order based on their values
     const today = new Date().toLocaleDateString();
-    const todayDate = document.querySelector('.date-today');
-    todayDate.innerHTML = '';
-    const textSpan = document.createElement('p');
-    const dateFormat = {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    };
-    textSpan.innerHTML = `${new Date().toLocaleDateString('en-gb', dateFormat)}`;
-    todayDate.appendChild(textSpan);
-
-    const filtered = Object.keys(data).filter(e => data[e].hasOwnProperty([today]));
-    const sortedKeys = filtered.sort((a, b) => data[b][today].time - data[a][today].time);
+    const filtered = Object.keys(data).filter(e => data[e]['history'].hasOwnProperty([today]));
+    const sortedKeys = filtered.sort((a, b) => data[b]['history'][today].time - data[a]['history'][today].time);
 
     for (const key of sortedKeys) {
       const listItem = document.createElement('li');
@@ -43,12 +32,27 @@ document.addEventListener('DOMContentLoaded', function () {
       keySpan.textContent = key;
 
       const valueSpan = document.createElement('span');
-      valueSpan.textContent = formatTime(data[key][today]['time']);
+      valueSpan.textContent = formatTime(data[key]['history'][today]['time']);
 
       listItem.appendChild(keySpan);
       listItem.appendChild(valueSpan);
       listContainer.appendChild(listItem);
     }
+
+    // set today's usages
+    let totalToday = 0;
+    filtered.forEach(e => { totalToday += data[e]['history'][today].time });
+    
+    const todayDate = document.querySelector('.date-today');
+    todayDate.innerHTML = '';
+    const textSpan = document.createElement('p');
+    const dateFormat = {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    };
+    textSpan.innerHTML = `${new Date().toLocaleDateString('en-gb', dateFormat)} | ${formatTime(totalToday)}`;
+    todayDate.appendChild(textSpan);
   }
 
   // Function to format seconds to "h:m:s" format

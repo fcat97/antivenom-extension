@@ -4,6 +4,8 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, response) => {
-    console.log(`onMessage msg: ${message} sender: ${JSON.stringify(sender)}`);
-    response({'response': 'hi'});
+    if(message['cmd'] == "timeup") {
+        console.log("timeup");
+        window.location.href = chrome.runtime.getURL("timeout2.html");
+    }
 });
