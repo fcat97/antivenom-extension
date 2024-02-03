@@ -19,16 +19,29 @@
       "matches": [
         "*://*/*"
       ],
-      "exclude_matches": ["*://*.chrome/*", "*://*.edge/*"],
+      "exclude_matches": [
+        "*://*.chrome/*",
+        "*://*.edge/*"
+      ],
       "js": [
         "content.js"
       ]
     }
   ],
+  "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": [ "timeout.html", "timeout2.html" ],
-      "matches": [ "<all_urls>" ]
+      "resources": [
+        "timeout.html",
+        "timeout2.html",
+        "settings.htlm"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
 }
