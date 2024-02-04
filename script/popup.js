@@ -1,18 +1,10 @@
 // popup.js
 
-document.addEventListener('DOMContentLoaded', function () {
-  // Function to retrieve data from local storage
-  function retrieveLocalStorageItems() {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get(null, function (result) {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError));
-        } else {
-          resolve(result);
-        }
-      });
-    });
-  }
+import {retrieveLocalStorageItems, formatTime, getActiveDomain} from './utils.js';
+
+
+document.addEventListener('DOMContentLoaded', async function () {
+  const activeDomain = await getActiveDomain();
 
   // Function to dynamically create sorted list items
   function createSortedListItems(data) {
@@ -25,22 +17,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const sortedKeys = filtered.sort((a, b) => data[b]['history'][today].time - data[a]['history'][today].time);
 
     for (const key of sortedKeys) {
-      // const listItem = document.createElement('li');
-      // listItem.classList.add('list-group-item', 'd-flex', 'card', 'justify-content-between', 'align-items-center', 'text-truncate');
-
-      // const keySpan = document.createElement('span');
-      // keySpan.textContent = key;
-
-      // const valueSpan = document.createElement('span');
-      // valueSpan.textContent = formatTime(data[key]['history'][today]['time']);
-
-      // listItem.appendChild(keySpan);
-      // listItem.appendChild(valueSpan);
-      // listContainer.appendChild(listItem);
-
       const hostname = key;
       const time = data[key]['history'][today]['time'];
-      const li = getListElement(hostname, time);
+      const isActive = activeDomain == key;
+      const li = getListElement(hostname, time, isActive);
       listContainer.appendChild(li);
     }
 
@@ -58,32 +38,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const todayTime = document.querySelector(".total-today");
     todayTime.innerHTML = `${formatTime(totalToday)}`;
-
-    // textSpan.innerHTML = `${new Date().toLocaleDateString('en-gb', dateFormat)} | ${formatTime(totalToday)}`;
-    // todayDate.appendChild(textSpan);
-
-    // document.getElementById('date-today').innerText = today;
   }
 
-  // Function to format seconds to "h:m:s" format
-  function formatTime(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-
-    let formattedTime = '';
-    if (hours > 0) {
-      formattedTime += hours + 'h ';
-    }
-    if (minutes > 0 || hours > 0) {
-      formattedTime += minutes + 'm ';
-    }
-    formattedTime += remainingSeconds + 's';
-
-    return formattedTime.trim();
-  }
-
-  function getListElement(hostname, esplaced) {
+  function getListElement(hostname, esplaced, isActive) {
     const timeElapsed = formatTime(esplaced);
     const itemId = `${hostname}`
 
@@ -92,13 +49,20 @@ document.addEventListener('DOMContentLoaded', function () {
       <div class="col-8" style="text-overflow: ellipsis; text-wrap: nowrap; overflow: hidden;">
         ${hostname}
       </div>
-      <div class="col-4" style="text-align: end;">${timeElapsed}</div>
+      <div class="col-4" style="text-align: end;">
+        ${timeElapsed}
+      </div>
     </div>
     `
 
     const li = document.createElement('li');
     li.classList.add('list-group-item');
     li.id = `li-${itemId}`;
+
+    if (isActive) {
+      li.classList.add("active-tab");
+    }
+
     li.innerHTML = template;
     return li;
   }

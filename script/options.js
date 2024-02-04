@@ -1,29 +1,4 @@
-// -------------------------------- protected ---------------------------//
-
-// Function to store data
-function storeData(dataToStore) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.set(dataToStore, function () {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError));
-      } else {
-        resolve("Data stored successfully");
-      }
-    });
-  });
-}
-
-function retrieveLocalStorageItems() {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get(null, function (result) {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError));
-      } else {
-        resolve(result);
-      }
-    });
-  });
-}
+import {retrieveLocalStorageItems, storeData} from './utils.js';
 
 // ---------------------------- script ------------------------------------- //
 
@@ -63,7 +38,9 @@ function loadDomainSettings(dataItems, domain) {
   const sRedirect = document.getElementById("s-dont-redirect");
   sRedirect.checked = pauseTimeout;
   sRedirect.onchange = () => {
-    item["config"].pauseTimeout = sRedirect.checked;
+    if (domain != "others") {
+      item["config"].pauseTimeout = sRedirect.checked;
+    }
 
     updateDomainSettings(domain, item);
   };

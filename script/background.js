@@ -1,51 +1,8 @@
+import {getDomain, retrieveData, storeData} from './utils.js';
+
 let activeTabID = "";
 let watcherID = undefined;
 const defaultTimeLimit = 30 * 60; // 30 minutes in seconds
-
-function getDomain(url) {
-    try {
-        // Create a URL object from the provided URL string
-        const urlObject = new URL(url);
-        if (urlObject.protocol != "http:" && urlObject.protocol != "https:") {
-            console.log(`protocol: ${urlObject.protocol} ${urlObject.protocol == "https:"} ${url}`);
-            return "others";
-        }
-
-        // Access the hostname property to get the domain
-        const domain = urlObject.hostname;
-
-        return domain;
-    } catch (error) {
-        console.error('Invalid URL:', error);
-        return 'www';
-    }
-}
-
-// Function to store data
-function storeData(dataToStore) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.set(dataToStore, function () {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError));
-            } else {
-                resolve('Data stored successfully');
-            }
-        });
-    });
-};
-
-// Function to retrieve data
-function retrieveData(keysToRetrieve) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.get(keysToRetrieve, function (result) {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError));
-            } else {
-                resolve(result);
-            }
-        });
-    });
-};
 
 
 async function runWatcher() {
@@ -70,16 +27,12 @@ async function runWatcher() {
         info = {};
         info['config'] = {
             timeLimit: defaultTimeLimit,
-            openLimit: 0,
-            pauseTimeout: false,
+            openLimit: 15,
+            pauseTimeout: true,
             pauseHistory: false
         }
 
         info['history'] = {};
-        
-        if (domain == 'others') {
-            info['config'].pauseTimeout = true;
-        }
     }
 
     // get data for today
@@ -110,9 +63,13 @@ async function runWatcher() {
     await storeData(toPut);
 
     // send timeout signal
-    if (!info['config'].pauseTimeout && todayHistory.time > info['config'].timeLimit) {
+    if (!info['config'].pauseTimeout) {
         try {
-            chrome.tabs.sendMessage(tab.id, { cmd: "timeup" });   
+            if (todayHistory.time > 0 && todayHistory.time > info['config'].timeLimit) {
+                chrome.tabs.sendMessage(tab.id, { cmd: "timeup" });   
+            } else if (todayHistory.open > 0 && todayHistory.open > info['config'].openLimit) {
+                chrome.tabs.sendMessage(tab.id, { cmd: "timeup" });
+            }
         } catch (error) {
             console.log(error);
         }

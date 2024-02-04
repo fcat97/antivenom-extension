@@ -12,7 +12,8 @@
     "storage"
   ],
   "background": {
-    "service_worker": "./script/background.js"
+    "service_worker": "./script/background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
