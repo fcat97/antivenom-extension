@@ -35,6 +35,21 @@ export function storeData(dataToStore) {
   });
 }
 
+export async function addToTrackingList(domain) {
+  const defaultTimeLimit = 30 * 60; // 30 min
+  const info = {};
+  info['config'] = {
+      timeLimit: defaultTimeLimit,
+      openLimit: 15,
+      isLocked: domain == 'others' ? false : true,
+      pauseHistory: false
+  }
+
+  info['history'] = {};
+
+  await storeData({[domain]: info});
+}
+
 // Function to format seconds to "h:m:s" format
 export function formatTime(seconds) {
   const hours = Math.floor(seconds / 3600);

@@ -14,7 +14,6 @@ async function runWatcher() {
     const domain = getDomain(url);
     if (domain == "") return;
 
-
     // key for today data
     const today = new Date().toLocaleDateString();
 
@@ -22,18 +21,8 @@ async function runWatcher() {
     let info = await retrieveData([domain]);
     info = info[domain];
 
-    // crete new object if no previous data exists
-    if (info === undefined) {
-        info = {};
-        info['config'] = {
-            timeLimit: defaultTimeLimit,
-            openLimit: 15,
-            pauseTimeout: true,
-            pauseHistory: false
-        }
-
-        info['history'] = {};
-    }
+    // return if not info for this domain found
+    if (info === undefined) return
 
     // get data for today
     let history = info['history'];
@@ -63,7 +52,7 @@ async function runWatcher() {
     await storeData(toPut);
 
     // send timeout signal
-    if (!info['config'].pauseTimeout) {
+    if (info['config'].isLocked) {
         try {
             if (todayHistory.time > 0 && todayHistory.time > info['config'].timeLimit) {
                 chrome.tabs.sendMessage(tab.id, { cmd: "timeup" });   

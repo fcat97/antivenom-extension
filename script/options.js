@@ -22,7 +22,7 @@ function loadDomainSettings(dataItems, domain) {
   const timeLimit = item["config"]["timeLimit"];
   const openLimit = item["config"]["openLimit"];
   const pauseHistory = item["config"]["pauseHistory"];
-  const pauseTimeout = item["config"]["pauseTimeout"];
+  const isLocked = item["config"]["isLocked"];
 
   document.getElementById("p-time").textContent = `${timeLimit / 60}m`;
   document.getElementById("p-open").textContent = `${openLimit}`;
@@ -36,10 +36,10 @@ function loadDomainSettings(dataItems, domain) {
   };
 
   const sRedirect = document.getElementById("s-dont-redirect");
-  sRedirect.checked = pauseTimeout;
+  sRedirect.checked = isLocked;
   sRedirect.onchange = () => {
     if (domain != "others") {
-      item["config"].pauseTimeout = sRedirect.checked;
+      item["config"].isLocked = sRedirect.checked;
     }
 
     updateDomainSettings(domain, item);
