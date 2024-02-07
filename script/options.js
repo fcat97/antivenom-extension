@@ -1,22 +1,21 @@
-import {retrieveLocalStorageItems, storeData} from './utils.js';
+import {
+  retrieveLocalStorageItems,
+  increaseTimeLimit,
+  decreaseTimeLimit,
+  increaseOpenLimit,
+  decreaseOpenLimit,
+  lockSite,
+  unlockSite,
+  startTracking,
+  stopTracking,
+  retrieveData,
+} from "./utils.js";
 
 // ---------------------------- script ------------------------------------- //
 
-async function updateDomainSettings(domain, item) {
-  // history is lost since background.js is updating the data each second
-  // but the item passes in parameter is old one.
-  const dataItems = await retrieveLocalStorageItems();
-  const [_, newItem] = Object.entries(dataItems).find(([k, _]) => k == domain);
-  newItem["config"] = item.config;
-
-  console.log(`update: domain: ${domain} data: ${JSON.stringify(newItem)}`);
-
-  storeData({ [domain]: newItem });
-  loadDomainSettings(dataItems, domain);
-}
-
-function loadDomainSettings(dataItems, domain) {
-  const [_, item] = Object.entries(dataItems).find(([k, _]) => k == domain);
+async function loadDomainSettings(domain) {
+  let item = await retrieveData([domain]);
+  item = item[domain];
   console.log(`dataItem: ${JSON.stringify(item)}`);
 
   const timeLimit = item["config"]["timeLimit"];
@@ -29,50 +28,42 @@ function loadDomainSettings(dataItems, domain) {
 
   const sRecordHistory = document.getElementById("s-pause-history");
   sRecordHistory.checked = pauseHistory;
-  sRecordHistory.onchange = () => {
-    item["config"].pauseHistory = sRecordHistory.checked;
+  sRecordHistory.onchange = async () => {
+    if (sRecordHistory.checked) {
+      await stopTracking(domain);
+    } else {
+      await startTracking(domain);
+    }
 
-    updateDomainSettings(domain, item);
+    await loadDomainSettings(domain);
   };
 
   const sRedirect = document.getElementById("s-dont-redirect");
   sRedirect.checked = isLocked;
-  sRedirect.onchange = () => {
-    if (domain != "others") {
-      item["config"].isLocked = sRedirect.checked;
+  sRedirect.onchange = async () => {
+    if (sRedirect.checked) {
+      await lockSite(domain);
+    } else {
+      await unlockSite(domain);
     }
-
-    updateDomainSettings(domain, item);
+    await loadDomainSettings(domain);
   };
 
   document.getElementById("b-time-dec").onclick = async () => {
-    let time = timeLimit - 60;
-    if (time < 0) time = 0;
-    item["config"].timeLimit = time;
-
-    updateDomainSettings(domain, item);
+    await decreaseTimeLimit(domain);
+    await loadDomainSettings(domain);
   };
-
   document.getElementById("b-time-inc").onclick = async () => {
-    let time = timeLimit + 60;
-    item["config"].timeLimit = time;
-
-    updateDomainSettings(domain, item);
+    await increaseTimeLimit(domain);
+    await loadDomainSettings(domain);
   };
-
   document.getElementById("b-open-dec").onclick = async () => {
-    let open = openLimit - 1;
-    if (open < 0) open = 0;
-    item["config"].openLimit = open;
-
-    updateDomainSettings(domain, item);
+    await decreaseOpenLimit(domain);
+    await loadDomainSettings(domain);
   };
-
   document.getElementById("b-open-inc").onclick = async () => {
-    let open = openLimit + 1;
-    item["config"].openLimit = open;
-
-    updateDomainSettings(domain, item);
+    await increaseOpenLimit(domain);
+    await loadDomainSettings(domain);
   };
 }
 
@@ -81,7 +72,7 @@ function createListItems(dataItems, selectedDomain) {
   const ul = document.getElementById("site-lists");
 
   // clear the list
-  while(ul.firstChild) {
+  while (ul.firstChild) {
     ul.removeChild(ul.lastChild);
   }
 
@@ -93,9 +84,9 @@ function createListItems(dataItems, selectedDomain) {
     li.onclick = () => {
       document.getElementById("div-settings").style.display = "block";
       document.getElementById("div-none-selected").style.display = "none";
-      
+
       createListItems(dataItems, domain);
-      loadDomainSettings(dataItems, domain);
+      loadDomainSettings(domain);
     };
   });
 }

@@ -4,7 +4,10 @@ import {
   retrieveLocalStorageItems,
   formatTime,
   getActiveDomain,
-  addToTrackingList,
+  startTracking,
+  stopTracking,
+  lockSite,
+  unlockSite
 } from "./utils.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -12,35 +15,32 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Function to dynamically create sorted list items
   function createSortedListItems(data) {
-    const listContainer = document.querySelector(".list-group");
-    listContainer.innerHTML = "";
-
+ 
     // Sort keys in descending order based on their values
     const today = new Date().toLocaleDateString();
     const filtered = Object.keys(data).filter((e) =>
       data[e]["history"].hasOwnProperty([today])
     );
-    const sortedKeys = filtered.sort(
-      (a, b) => data[b]["history"][today].time - data[a]["history"][today].time
-    );
 
     if (!Object.keys(data).includes(activeDomain)) {
-      const li = getAddToTrackingElement(activeDomain);
-      listContainer.appendChild(li);
+      const time = 0;
+      const opened = 0;
+      const remainingTime = 0;
+      const remainingOpen = 0;
+      const isLocked = false;
+      const pauseHistory = false;
 
-      document.getElementById("b-lock-site").onclick = async () => {
-        console.log(`add btn: ${activeDomain}`);
-        await addToTrackingList(activeDomain);
-      };
-    }
+      updateDomailData(activeDomain, isLocked, pauseHistory, time, opened, remainingTime, remainingOpen)
+    } else {
+      const hostInfo = data[activeDomain];
+      const time = hostInfo["history"][today].time;
+      const opened = hostInfo["history"][today].open;
+      const remainingTime = hostInfo['config'].timeLimit - time;
+      const remainingOpen = hostInfo['config'].openLimit - opened;
+      const isLocked = hostInfo['config'].isLocked;
+      const pauseHistory = hostInfo['config'].pauseHistory;
 
-    for (const key of sortedKeys) {
-      const hostname = key;
-      const time = data[key]["history"][today]["time"];
-      const isActive = activeDomain == key;
-      const isLocked = data[key]['config'].isLocked;
-      const li = getListElement(hostname, time, isActive, isLocked);
-      listContainer.appendChild(li);
+      updateDomailData(activeDomain, isLocked, pauseHistory, time, opened, remainingTime, remainingOpen)
     }
 
     // set today's usages
@@ -85,63 +85,47 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 // -------------------------------- template ---------------------------------------- //
-function getListElement(hostname, esplaced, isActive, isLocked) {
-  const timeElapsed = formatTime(esplaced);
-  const itemId = `${hostname}`;
+function updateDomailData(domain, isLocked, pauseHistory, spentTime, opened, remainingTime, remainingOpen) {
+  document.getElementById('domain-name').innerHTML = `<strong>${domain}</strong>`;
 
-  let hostnameDiv;
   if (isLocked) {
-    hostnameDiv = `
-      <div class="col-8" style="text-overflow: ellipsis; text-wrap: nowrap; overflow: hidden;">
-        <i class="bi bi-lock"></i>${hostname}
-      </div>
-    `
+    document.getElementById('span-remaining').innerText = "Remaining:";
+    document.getElementById('i-time').innerText = formatTime(remainingTime);
+    document.getElementById('i-open').innerText = remainingOpen;
+
+    document.getElementById('b-unlock-site').style.display = 'block';
+    document.getElementById('b-lock-site').style.display = 'none';
   } else {
-    hostnameDiv = `
-      <div class="col-8" style="text-overflow: ellipsis; text-wrap: nowrap; overflow: hidden;">
-        ${hostname}
-      </div>
-    `
+    document.getElementById('span-remaining').innerText = "Spent:";
+    document.getElementById('i-time').innerText = formatTime(spentTime);
+    document.getElementById('i-open').innerText = opened;
+
+    document.getElementById('b-unlock-site').style.display = 'none';
+    document.getElementById('b-lock-site').style.display = 'block';
+  }
+  
+  if (pauseHistory) {
+    document.getElementById('div-stat').style.display = 'none';
+
+    document.getElementById('b-tracking-pause').style.display = 'none';
+    document.getElementById('b-tracking-start').style.display = 'block';
+  } else {
+    document.getElementById('div-stat').style.display = 'block';
+
+    document.getElementById('b-tracking-pause').style.display = 'block';
+    document.getElementById('b-tracking-start').style.display = 'none';
   }
 
-  let template = `
-  <div class="row justify-content-between">
-    ${hostnameDiv}
-    <div class="col-4" style="text-align: end;">
-      ${timeElapsed}
-    </div>
-  </div>
-  `;
-
-  const li = document.createElement("li");
-  li.classList.add("list-group-item");
-  li.id = `li-${itemId}`;
-
-  if (isActive) {
-    li.classList.add("active-tab");
-  }
-
-  li.innerHTML = template;
-  return li;
-}
-
-function getAddToTrackingElement(hostname) {
-  const li = document.createElement("li");
-  li.classList.add("tag-group-item");
-  li.id = `li-${hostname}-add`;
-
-  li.innerHTML = `
-  <div class="row justify-content-between m-1">
-    <div class="col-8" style="text-overflow: ellipsis; text-wrap: nowrap; overflow: hidden;">
-      ${hostname}
-    </div>
-    <div class="col-4" style="text-align: end;">
-      <button type="button" class="btn btn-sm btn-outline-primary" id="b-lock-site">
-        <i class="bi bi-lock"></i>
-      </button>
-    </div>
-  </div>
-  `;
-
-  return li;
+  document.getElementById('b-tracking-start').onclick = async () => {
+    await startTracking(domain);
+  };
+  document.getElementById('b-tracking-pause').onclick = async () => {
+    await stopTracking(domain);
+  };
+  document.getElementById('b-lock-site').onclick = async () => {
+    await lockSite(domain);
+  };
+  document.getElementById('b-unlock-site').onclick = async () => {
+    await unlockSite(domain);
+  };
 }

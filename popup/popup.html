@@ -42,20 +42,35 @@
       <p class="total-today text-center">2h 30m 12s</p>
     </div>
 
-    <ul class="list-group list-group-flush">
-      <!-- li will be added dynamically from ../script/popup.js-->
+    <div class="p-1 card-body">
+      <div style="text-align: center" id="domain-name">
+        <strong>www.facebook.com</strong>
+      </div>
 
-      <!-- <li class="list-group-item">
-        <div class="row justify-content-between">
-          <div class="col-8" style="text-overflow: ellipsis; text-wrap: nowrap; overflow: hidden;">
-            <a href="#one" style="text-decoration: none;">www.Facebook.com</a>
-          </div>
-          <div class="col-4" style="text-align: end;">
-            2h 30m
-          </div>
-        </div>
-      </li> -->
-    </ul>
+      <div style="text-align: center; font-size: smaller;" id="div-stat">
+        <span id="span-remaining"> remaining: </span> 
+        <i class="bi bi-clock" id="i-time">20m 25s</i>
+        <i class="bi bi-unlock" id="i-open">5</i>
+      </div>
+      <div class="row ps-4 pe-4 justify-content-center">
+        <button type="button" class="col m-1 btn btn-sm btn-outline-primary" id="b-tracking-start">
+          <i class="bi bi-clock">Track Usage</i>
+        </button>
+
+        <button type="button" class="col m-1 btn btn-sm btn-outline-primary" id="b-tracking-pause">
+          <i class="bi bi-pause">Pause Tracking</i>
+        </button>
+      </div>
+      <div class="row ps-4 pe-4 justify-content-center">
+        <button type="button" class="col m-1 btn btn-sm btn-outline-primary" id="b-lock-site">
+          <i class="bi bi-lock">Lock Site</i>
+        </button>
+
+        <button type="button" class="col m-1 btn btn-sm btn-outline-primary" id="b-unlock-site">
+          <i class="bi bi-unlock">Unlock Site</i>
+        </button>
+      </div>
+    </div>
 
     <div class="d-grid gap-2 d-md-block card-footer">
       <button class="btn btn-outline-secondary btn-sm" id="btn-settings" type="button">
